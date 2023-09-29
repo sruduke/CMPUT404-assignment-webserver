@@ -1,5 +1,6 @@
 #  coding: utf-8 
 import socketserver
+from http_data import HttpRequest, HttpResponse
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -26,13 +27,22 @@ import socketserver
 
 # try: curl -v -X GET http://127.0.0.1:8080/
 
+BUFFER_SIZE = 1024
 
 class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+
+        string_version = bytes.decode(self.data)
+
+        # first, we parse the request into an httprequest object
+        http_request = HttpRequest(string_version)
+        # validate the request and get the approriate response
+        response = http_request.validateAndFormResponse()
+        # encode the response string into bytes to be sent back to the client
+        self.request.sendall(response.encode('utf-8'))
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
@@ -44,3 +54,4 @@ if __name__ == "__main__":
     # Activate the server; this will keep running until you
     # interrupt the program with Ctrl-C
     server.serve_forever()
+
